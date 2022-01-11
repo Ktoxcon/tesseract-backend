@@ -1,12 +1,14 @@
-import App from "./app/server";
-import config from "../src/config/config";
-
+import * as Express from "express";
+import RequestHandler from "./handlers/todos";
 import { displayServerRunningMessage } from "./utils/prompt";
 
-const {
-  server: { port },
-} = config;
+const appPort = 3000;
+const App = Express();
 
-App.listen(port, () => {
-  displayServerRunningMessage(port);
+App.use(Express.json());
+App.use(Express.urlencoded());
+App.use("/v1", RequestHandler);
+
+App.listen(appPort, () => {
+  displayServerRunningMessage(appPort);
 });
