@@ -24,3 +24,6 @@ dist/**/*
 
 # Lock files
 package-lock.json
+
+#Database bin files
+*.db
