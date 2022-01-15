@@ -24,6 +24,8 @@ dist/**/*
 
 # Lock files
 package-lock.json
+*.lock
 
 #Database bin files
 *.db
+*.sqlite
