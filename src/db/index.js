@@ -22,7 +22,7 @@ async function getDBHandler() {
 
 async function initializeDB() {
   try {
-    const dbHandler = getDBHandler();
+    const dbHandler = await getDBHandler();
 
     await dbHandler.exec(
       `CREATE TABLE IF NOT EXISTS todos (

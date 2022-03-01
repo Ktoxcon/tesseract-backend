@@ -16,7 +16,7 @@ RequestHandler.post("/to-dos", async (req, res, next) => {
           ${is_done}
        )`
     );
-
+    
     await dbHandler.close();
 
     res.send({
@@ -35,7 +35,7 @@ RequestHandler.post("/to-dos", async (req, res, next) => {
   }
 });
 
-RequestHandler.put("/to-dos/:id", async (req, res, next) => {
+RequestHandler.patch("/to-dos/:id", async (req, res, next) => {
   try {
     const todoId = req.params.id;
 

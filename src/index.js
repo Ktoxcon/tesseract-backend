@@ -1,10 +1,11 @@
 const Express = require("express");
+const RequestHandler = require("./handlers/todos");
+
 const { initializeDB } = require("./db");
 const {
   displayServerRunningMessage,
   displayDBInitializedMessage,
 } = require("./utils/prompt");
-const RequestHandler = require("./handlers/todos");
 
 const appPort = 3000;
 const App = Express();
