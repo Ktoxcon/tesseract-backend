@@ -7,6 +7,7 @@
     "start": "nodemon ./src"
   },
   "dependencies": {
+    "cors": "^2.8.5",
     "express": "^4.17.2",
     "figlet": "^1.5.2",
     "sqlite": "^4.0.23",
