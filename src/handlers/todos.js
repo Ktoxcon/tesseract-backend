@@ -3,140 +3,106 @@ const { getDBHandler } = require("../db");
 
 const RequestHandler = Express.Router();
 
-RequestHandler.post("/to-dos", async (req, res, next) => {
-  try {
-    const { title, description, isDone: is_done } = req.body;
-
-    const dbHandler = await getDBHandler();
-    const newTodo = await dbHandler.run(
-      `INSERT INTO todos (title, description, is_done) 
-       VALUES (
-          '${title}',
-          '${description}',
-          ${is_done}
-       )`
-    );
-    
-    await dbHandler.close();
-
-    res.send({
-      todoAdded: {
-        title,
-        description,
-        isDone: is_done,
-      },
-    });
-  } catch (error) {
-    res.status(500).send({
-      error: `There was an unexpected error trying to create a new to do`,
-      errorMessage: error.message,
-      errorDetails: error,
-    });
-  }
-});
-
-RequestHandler.patch("/to-dos/:id", async (req, res, next) => {
-  try {
-    const todoId = req.params.id;
-
-    if (!todoId) {
-      res.status(400).send({ error: `A to do id was expected, got ${todoId}` });
-      next();
-    }
-
-    const { title, description, isDone: is_done } = req.body;
-
-    const dbHandler = await getDBHandler();
-    const updatedTodo = await dbHandler.run(
-      `UPDATE todos 
-        SET title = '${title}',
-            description = '${description}',
-            is_done = ${is_done}
-       WHERE id = ${todoId}
-      `
-    );
-
-    await dbHandler.close();
-
-    res.send({
-      updatedTodo: { title, description, isDone: is_done },
-    });
-  } catch (error) {
-    res.status(500).send({
-      error: `There was an unexpected error trying to update a to do`,
-      errorMessage: error.message,
-      errorDetails: error,
-    });
-  }
-});
-
-RequestHandler.get("/to-dos", async (req, res, next) => {
+RequestHandler.get("/to-dos", async (request, response) => {
   try {
     const dbHandler = await getDBHandler();
+
     const todos = await dbHandler.all("SELECT * FROM todos");
+    await dbHandler.close();
 
-    if (!todos) {
-      res.status(404).send({ message: "To Dos Not Found" });
-      next();
+    if (!todos || !todos.length) {
+      return response.status(404).send({ message: "To Dos Not Found" }).end();
     }
 
-    dbHandler.close();
-
-    res.send(todos);
+    response.send({ todos });
   } catch (error) {
-    res.status(500).send({
-      error: `There was an unexpected error trying to get the to dos`,
-      errorMessage: error.message,
-      errorDetails: error,
+    response.status(500).send({
+      error: `Something went wrong when trying to get the to dos list:`,
+      errorInfo: error.message,
     });
   }
 });
 
-RequestHandler.get("/to-dos/:id", async (req, res, next) => {
+RequestHandler.post("/to-dos", async (request, response) => {
   try {
-    const todoId = req.params.id;
+    const { title, description, isDone: is_done } = request.body;
 
     const dbHandler = await getDBHandler();
-    const todoFound = await dbHandler.get(
+
+    const newTodo = await dbHandler.run(`
+        INSERT INTO todos (title, description, is_done)
+        VALUES (
+            '${title}',
+            '${description}',
+            ${is_done}
+        )
+    `);
+
+    await dbHandler.close();
+
+    response.send({ newTodo: { title, description, is_done, ...newTodo } });
+  } catch (error) {
+    response.status(500).send({
+      error: `Something went wrong when trying to create a new to do:`,
+      errorInfo: error.message,
+    });
+  }
+});
+
+RequestHandler.patch("/to-dos/:id", async (request, response) => {
+  try {
+    const todoId = request.params.id;
+    const dbHandler = await getDBHandler();
+    const { title, description, isDone: is_done } = request.body;
+
+    const todoToUpdate = await dbHandler.get(
       "SELECT * FROM todos WHERE id = ?",
       todoId
     );
 
-    if (!todoFound) {
-      res.status(404).send({ message: "To Do Not Found" });
-      next();
-    }
+    await dbHandler.run(
+      `UPDATE todos SET title = ?, description = ?, is_done = ? 
+        WHERE id = ?`,
+      title || todoToUpdate.title,
+      description || todoToUpdate.description,
+      is_done !== undefined ? is_done : todoToUpdate.is_done,
+      todoId
+    );
 
-    dbHandler.close();
+    const updatedTodo = await dbHandler.get(
+      "SELECT * FROM todos WHERE id = ?",
+      todoId
+    );
 
-    res.send(todoFound);
+    await dbHandler.close();
+
+    response.send({ updatedTodo });
   } catch (error) {
-    res.status(500).send({
-      error: `There was an unexpected error trying to get the to dos`,
-      errorMessage: error.message,
-      errorDetails: error,
+    response.status(500).send({
+      error: `Something went wrong when trying to update a the to do:`,
+      errorInfo: error.message,
     });
   }
 });
 
-RequestHandler.delete("/to-dos/:id", async (req, res, next) => {
+RequestHandler.delete("/to-dos/:id", async (request, response) => {
   try {
-    const todoId = req.params.id;
-
+    const todoId = request.params.id;
     const dbHandler = await getDBHandler();
+
     const deletedTodo = await dbHandler.run(
       "DELETE FROM todos WHERE id = ?",
       todoId
     );
 
-    dbHandler.close();
+    await dbHandler.close();
 
-    res.send(deletedTodo);
+    response.send({ todoRemoved: { ...deletedTodo } });
   } catch (error) {
-    res.status(500).send({
-      error: `There was an unexpected error trying to delete a todo`,
-      errorMessage: error.message,
-      errorDetails: error,
+    console.log("HERE");
+    response.status(500).send({
+      error: `Something went wrong when trying to delete a to do:`,
+      errorInfo: error.message,
     });
   }
 });
